@@ -1,0 +1,4 @@
+# 大文件（超过100MB，GitHub限制）
+*.tar.gz
+*.zip
+.clawhub/
