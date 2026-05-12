@@ -20,9 +20,8 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Gradle
+      - name: Generate Gradle Wrapper
         run: |
-          cd ReminderApp
           if [ ! -f gradlew ]; then
             gradle wrapper --gradle-version 8.2
           fi
@@ -30,11 +29,10 @@ jobs:
 
       - name: Build Debug APK
         run: |
-          cd ReminderApp
           ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
-          path: ReminderApp/app/build/outputs/apk/debug/app-debug.apk
+          path: app/build/outputs/apk/debug/app-debug.apk
