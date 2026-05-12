@@ -23,6 +23,13 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@main
 
+      - name: Create Gradle Wrapper
+        run: |
+          if [ ! -f gradlew ]; then
+            gradle wrapper --gradle-version 8.2
+          fi
+          chmod +x gradlew
+
       - name: Build Debug APK
         run: ./gradlew assembleDebug
 
