@@ -20,8 +20,11 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Gradle
+      - name: Setup Gradle 8.2
         run: |
+          curl -sL https://services.gradle.org/distributions/gradle-8.2-bin.zip -o /tmp/gradle.zip
+          unzip -q /tmp/gradle.zip -d /opt/
+          export PATH=/opt/gradle-8.2/bin:$PATH
           gradle wrapper --gradle-version 8.2
           chmod +x gradlew
 
