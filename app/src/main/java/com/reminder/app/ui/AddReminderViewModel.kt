@@ -1,30 +1,20 @@
 package com.reminder.app.ui
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.reminder.app.data.alarm.ReminderAlarmManager
-import com.reminder.app.data.local.Reminder
-import com.reminder.app.data.repository.ReminderRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.launch
-import javax.inject.Inject
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import com.reminder.app.data.Reminder
+import com.reminder.app.data.ReminderData
 
-@HiltViewModel
-class AddReminderViewModel @Inject constructor(
-    private val repository: ReminderRepository,
-    private val alarmManager: ReminderAlarmManager
-) : ViewModel() {
+class AddReminderViewModel(application: Application) : AndroidViewModel(application) {
+    private val data = ReminderData(application)
 
-    fun addReminder(title: String, content: String?, triggerTime: Long) {
-        viewModelScope.launch {
-            val reminder = Reminder(
-                title = title,
-                content = content,
-                triggerTime = triggerTime
-            )
-            val id = repository.insertReminder(reminder)
-            // 设置闹钟
-            alarmManager.setExactAlarm(id, triggerTime)
-        }
+    fun saveReminder(title: String, content: String, triggerTime: Long) {
+        val reminder = Reminder(
+            id = data.getNextId(),
+            title = title,
+            content = content,
+            triggerTime = triggerTime
+        )
+        data.save(reminder)
     }
 }
