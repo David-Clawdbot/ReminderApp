@@ -1,33 +1,56 @@
 package com.reminder.app.ui
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.reminder.app.data.local.Reminder
-import com.reminder.app.data.repository.ReminderRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.SharingStarted
+import com.reminder.app.data.Reminder
+import com.reminder.app.data.ReminderData
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
-@HiltViewModel
-class MainViewModel @Inject constructor(
-    private val repository: ReminderRepository
-) : ViewModel() {
+class MainViewModel(application: Application) : AndroidViewModel(application) {
+    private val data = ReminderData(application)
 
-    val allReminders: StateFlow<List<Reminder>> = repository.getAllReminders()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    private val _reminders = MutableStateFlow<List<Reminder>>(emptyList())
+    val reminders: StateFlow<List<Reminder>> = _reminders.asStateFlow()
+
+    init {
+        loadReminders()
+    }
+
+    fun loadReminders() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _reminders.value = data.getAll()
+        }
+    }
 
     fun deleteReminder(reminder: Reminder) {
-        viewModelScope.launch {
-            repository.deleteReminder(reminder)
+        viewModelScope.launch(Dispatchers.IO) {
+            data.delete(reminder.id)
+            loadReminders()
         }
     }
 
     fun deleteAllReminders() {
-        viewModelScope.launch {
-            repository.deleteAllReminders()
+        viewModelScope.launch(Dispatchers.IO) {
+            data.deleteAll()
+            loadReminders()
+        }
+    }
+
+    fun addReminder(title: String, content: String, triggerTime: Long) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val reminder = Reminder(
+                id = data.getNextId(),
+                title = title,
+                content = content,
+                triggerTime = triggerTime
+            )
+            data.save(reminder)
+            loadReminders()
         }
     }
 }
