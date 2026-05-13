@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
@@ -11,13 +12,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.reminder.app.R
-import com.reminder.app.data.local.Reminder
+import com.reminder.app.data.Reminder
 import com.reminder.app.databinding.ActivityMainBinding
-import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
-@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     private val TAG = "MainActivity"
 
@@ -29,6 +28,7 @@ class MainActivity : AppCompatActivity() {
         ActivityResultContracts.StartActivityForResult()
     ) { _ ->
         Log.i(TAG, "=== AddReminder result received ===")
+        viewModel.loadReminders()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,7 +84,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun observeReminders() {
         lifecycleScope.launch {
-            viewModel.allReminders.collectLatest { reminders ->
+            viewModel.reminders.collectLatest { reminders ->
                 adapter.submitList(reminders)
                 binding.emptyView.visibility = if (reminders.isEmpty()) View.VISIBLE else View.GONE
                 binding.recyclerView.visibility = if (reminders.isEmpty()) View.GONE else View.VISIBLE
