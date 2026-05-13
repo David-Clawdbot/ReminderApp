@@ -5,7 +5,6 @@ import android.app.TimePickerDialog
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.reminder.app.R
@@ -20,10 +19,10 @@ import java.util.Calendar
 import java.util.Locale
 
 class AddReminderActivity : AppCompatActivity() {
-    private val TAG = "AddReminderActivity"
+    private val TAG = "AddReminder"
 
     private lateinit var binding: ActivityAddReminderBinding
-    private val data by lazy { ReminderData(this) }
+    private lateinit var data: ReminderData
 
     private val calendar = Calendar.getInstance()
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
@@ -32,16 +31,20 @@ class AddReminderActivity : AppCompatActivity() {
     private var selectedDateStr = ""
     private var selectedTimeStr = ""
 
-    private val dateTimeLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { _ -> }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         Log.i(TAG, "=== onCreate START ===")
         try {
             super.onCreate(savedInstanceState)
+            Log.i(TAG, "super.onCreate done")
+
+            data = ReminderData(this)
+            Log.i(TAG, "ReminderData initialized")
+
             binding = ActivityAddReminderBinding.inflate(layoutInflater)
+            Log.i(TAG, "Binding inflated")
+
             setContentView(binding.root)
+            Log.i(TAG, "setContentView done")
 
             setupToolbar()
             setupDateButton()
@@ -52,15 +55,28 @@ class AddReminderActivity : AppCompatActivity() {
             Log.i(TAG, "=== onCreate END ===")
         } catch (e: Throwable) {
             Log.e(TAG, "FATAL in onCreate", e)
+            // Show crash dialog for debugging
+            android.app.AlertDialog.Builder(this)
+                .setTitle("AddReminderActivity Error")
+                .setMessage("Error: " + e.message + "\n" + android.util.Log.getStackTraceString(e))
+                .setPositiveButton("OK") { _, _ -> finish() }
+                .show()
         }
     }
 
     private fun setupToolbar() {
-        binding.toolbar.setNavigationOnClickListener { finish() }
+        Log.i(TAG, "Setting up toolbar")
+        binding.toolbar.setNavigationOnClickListener {
+            Log.i(TAG, "Toolbar back clicked")
+            finish()
+        }
+        binding.toolbar.title = getString(R.string.add_reminder)
     }
 
     private fun setupDateButton() {
+        Log.i(TAG, "Setting up date button")
         binding.btnDate.setOnClickListener {
+            Log.i(TAG, "Date button clicked")
             DatePickerDialog(
                 this,
                 { _, year, month, day ->
@@ -76,7 +92,9 @@ class AddReminderActivity : AppCompatActivity() {
     }
 
     private fun setupTimeButton() {
+        Log.i(TAG, "Setting up time button")
         binding.btnTime.setOnClickListener {
+            Log.i(TAG, "Time button clicked")
             TimePickerDialog(
                 this,
                 { _, hour, minute ->
@@ -94,7 +112,9 @@ class AddReminderActivity : AppCompatActivity() {
     }
 
     private fun setupSaveButton() {
+        Log.i(TAG, "Setting up save button")
         binding.btnSave.setOnClickListener {
+            Log.i(TAG, "Save button clicked")
             val title = binding.editTitle.text.toString().trim()
             val content = binding.editContent.text.toString().trim()
 
