@@ -9,8 +9,7 @@ class App : Application() {
     }
 
     override fun onCreate() {
-        Log.i(TAG, "=== App onCreate START ===")
+        Log.i(TAG, "=== App onCreate ===")
         super.onCreate()
-        Log.i(TAG, "=== App onCreate END ===")
     }
 }
