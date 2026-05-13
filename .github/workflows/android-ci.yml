@@ -25,6 +25,9 @@ jobs:
         with:
           gradle-version: 8.2
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Build Debug APK
         run: ./gradlew assembleDebug --no-daemon
 
