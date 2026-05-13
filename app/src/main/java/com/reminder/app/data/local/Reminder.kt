@@ -1,4 +1,4 @@
-package com.example.reminderapp.data.local
+package com.reminder.app.data.local
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

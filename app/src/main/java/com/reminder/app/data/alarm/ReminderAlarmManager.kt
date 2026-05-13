@@ -1,4 +1,4 @@
-package com.example.reminderapp.data.alarm
+package com.reminder.app.data.alarm
 
 import android.app.AlarmManager
 import android.app.PendingIntent
@@ -19,8 +19,8 @@ class ReminderAlarmManager @Inject constructor(
      * 设置精确闹钟
      */
     fun setExactAlarm(reminderId: Long, triggerTimeMillis: Long) {
-        val intent = Intent(context, com.example.reminderapp.receiver.ReminderReceiver::class.java).apply {
-            action = "com.example.reminderapp.TRIGGER_REMINDER"
+        val intent = Intent(context, com.reminder.app.receiver.ReminderReceiver::class.java).apply {
+            action = "com.reminder.app.TRIGGER_REMINDER"
             putExtra(EXTRA_REMINDER_ID, reminderId)
         }
 
@@ -60,8 +60,8 @@ class ReminderAlarmManager @Inject constructor(
      * 取消闹钟
      */
     fun cancelAlarm(reminderId: Long) {
-        val intent = Intent(context, com.example.reminderapp.receiver.ReminderReceiver::class.java).apply {
-            action = "com.example.reminderapp.TRIGGER_REMINDER"
+        val intent = Intent(context, com.reminder.app.receiver.ReminderReceiver::class.java).apply {
+            action = "com.reminder.app.TRIGGER_REMINDER"
         }
 
         val pendingIntent = PendingIntent.getBroadcast(

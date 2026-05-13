@@ -1,7 +1,7 @@
-package com.example.reminderapp.data.repository
+package com.reminder.app.data.repository
 
-import com.example.reminderapp.data.local.Reminder
-import com.example.reminderapp.data.local.ReminderDao
+import com.reminder.app.data.local.Reminder
+import com.reminder.app.data.local.ReminderDao
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton

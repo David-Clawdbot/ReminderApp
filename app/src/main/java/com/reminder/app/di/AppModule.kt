@@ -2,10 +2,10 @@ package com.reminder.app.di
 
 import android.content.Context
 import androidx.room.Room
-import com.example.reminderapp.data.local.ReminderDao
-import com.example.reminderapp.data.local.ReminderDatabase
-import com.example.reminderapp.data.repository.ReminderRepository
-import com.example.reminderapp.data.repository.ReminderRepositoryImpl
+import com.reminder.app.data.local.ReminderDao
+import com.reminder.app.data.local.ReminderDatabase
+import com.reminder.app.data.repository.ReminderRepository
+import com.reminder.app.data.repository.ReminderRepositoryImpl
 import dagger.Binds
 import dagger.Module
 import dagger.Provides

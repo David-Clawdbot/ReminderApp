@@ -1,4 +1,4 @@
-package com.example.reminderapp.data.notification
+package com.reminder.app.data.notification
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -11,8 +11,8 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import androidx.core.app.NotificationCompat
-import com.example.reminderapp.R
-import com.example.reminderapp.ui.MainActivity
+import com.reminder.app.R
+import com.reminder.app.ui.MainActivity
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton

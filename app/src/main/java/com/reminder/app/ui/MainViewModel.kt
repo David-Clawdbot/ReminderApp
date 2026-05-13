@@ -2,8 +2,8 @@ package com.reminder.app.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.reminderapp.data.local.Reminder
-import com.example.reminderapp.data.repository.ReminderRepository
+import com.reminder.app.data.local.Reminder
+import com.reminder.app.data.repository.ReminderRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
