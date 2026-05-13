@@ -30,14 +30,25 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+        android.util.Log.i("MainActivity", "=== onCreate START ===")
+        try {
+        android.util.Log.i("MainActivity", "=== onCreate START ===")
+        try {
+                        super.onCreate(savedInstanceState)
+            android.util.Log.i("MainActivity", "=== super.onCreate done ===")
         binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-
-        setupToolbar()
+            android.util.Log.i("MainActivity", "=== binding inflated ===")
+            setContentView(binding.root)
+            android.util.Log.i("MainActivity", "=== setContentView done ===")
+            android.util.Log.i("MainActivity", "=== setContentView done ===")
+            setupToolbar()
+            android.util.Log.i("MainActivity", "=== setupToolbar done ===")
         setupRecyclerView()
         setupFab()
         observeReminders()
+        } catch (e: Throwable) {
+            android.util.Log.e("MainActivity", "FATAL in onCreate", e)
+        }
     }
 
     private fun setupToolbar() {
