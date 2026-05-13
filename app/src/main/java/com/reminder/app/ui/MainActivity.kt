@@ -6,7 +6,6 @@ import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -21,7 +20,7 @@ class MainActivity : AppCompatActivity() {
     private val TAG = "MainActivity"
 
     private lateinit var binding: ActivityMainBinding
-    private val viewModel: MainViewModel by viewModels()
+    private lateinit var viewModel: MainViewModel
     private lateinit var adapter: ReminderAdapter
 
     private val addReminderLauncher = registerForActivityResult(
@@ -40,6 +39,10 @@ class MainActivity : AppCompatActivity() {
             Log.i(TAG, "=== binding inflated ===")
             setContentView(binding.root)
             Log.i(TAG, "=== setContentView done ===")
+            
+            viewModel = MainViewModel(application)
+            Log.i(TAG, "=== ViewModel created ===")
+            
             setupToolbar()
             Log.i(TAG, "=== setupToolbar done ===")
             setupRecyclerView()
