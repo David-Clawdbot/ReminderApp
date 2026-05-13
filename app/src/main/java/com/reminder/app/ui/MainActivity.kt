@@ -2,6 +2,7 @@ package com.reminder.app.ui
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -18,6 +19,7 @@ import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
+    private val TAG = "MainActivity"
 
     private lateinit var binding: ActivityMainBinding
     private val viewModel: MainViewModel by viewModels()
@@ -25,29 +27,30 @@ class MainActivity : AppCompatActivity() {
 
     private val addReminderLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        // 自动刷新，Flow会自动更新
+    ) { _ ->
+        Log.i(TAG, "=== AddReminder result received ===")
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        android.util.Log.i("MainActivity", "=== onCreate START ===")
+        Log.i(TAG, "=== onCreate START ===")
         try {
-        android.util.Log.i("MainActivity", "=== onCreate START ===")
-        try {
-                        super.onCreate(savedInstanceState)
-            android.util.Log.i("MainActivity", "=== super.onCreate done ===")
-        binding = ActivityMainBinding.inflate(layoutInflater)
-            android.util.Log.i("MainActivity", "=== binding inflated ===")
+            super.onCreate(savedInstanceState)
+            Log.i(TAG, "=== super.onCreate done ===")
+            binding = ActivityMainBinding.inflate(layoutInflater)
+            Log.i(TAG, "=== binding inflated ===")
             setContentView(binding.root)
-            android.util.Log.i("MainActivity", "=== setContentView done ===")
-            android.util.Log.i("MainActivity", "=== setContentView done ===")
+            Log.i(TAG, "=== setContentView done ===")
             setupToolbar()
-            android.util.Log.i("MainActivity", "=== setupToolbar done ===")
-        setupRecyclerView()
-        setupFab()
-        observeReminders()
+            Log.i(TAG, "=== setupToolbar done ===")
+            setupRecyclerView()
+            Log.i(TAG, "=== setupRecyclerView done ===")
+            setupFab()
+            Log.i(TAG, "=== setupFab done ===")
+            observeReminders()
+            Log.i(TAG, "=== observeReminders done ===")
+            Log.i(TAG, "=== onCreate END ===")
         } catch (e: Throwable) {
-            android.util.Log.e("MainActivity", "FATAL in onCreate", e)
+            Log.e(TAG, "FATAL in onCreate", e)
         }
     }
 
