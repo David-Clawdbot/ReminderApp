@@ -1,8 +1,16 @@
 package com.reminder.app
 
 import android.app.Application
-import dagger.hilt.android.HiltAndroidApp
+import android.util.Log
 
-@HiltAndroidApp
-class App : Application()
-// trigger CI
+class App : Application() {
+    companion object {
+        private const val TAG = "ReminderApp"
+    }
+
+    override fun onCreate() {
+        Log.i(TAG, "=== App onCreate START ===")
+        super.onCreate()
+        Log.i(TAG, "=== App onCreate END ===")
+    }
+}
