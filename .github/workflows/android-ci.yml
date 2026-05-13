@@ -38,7 +38,7 @@ jobs:
           sdkmanager "platforms;android-34" "build-tools;34.0.0" 2>/dev/null
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleDebug --no-daemon --info 2>&1 | tail -100
         env:
           ANDROID_HOME: /opt/android-sdk
 
