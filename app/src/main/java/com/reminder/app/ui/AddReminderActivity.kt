@@ -1,75 +1,71 @@
 package com.reminder.app.ui
 
-import android.Manifest
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.reminder.app.R
+import com.reminder.app.data.Reminder
+import com.reminder.app.data.ReminderData
 import com.reminder.app.databinding.ActivityAddReminderBinding
-import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
-@AndroidEntryPoint
 class AddReminderActivity : AppCompatActivity() {
+    private val TAG = "AddReminderActivity"
 
     private lateinit var binding: ActivityAddReminderBinding
-    private val viewModel: AddReminderViewModel by viewModels()
+    private val data by lazy { ReminderData(this) }
 
     private val calendar = Calendar.getInstance()
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
     private val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-    private val dateTimeFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
 
-    private val notificationPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            saveReminder()
-        } else {
-            Toast.makeText(this, R.string.permission_required, Toast.LENGTH_SHORT).show()
-        }
-    }
+    private var selectedDateStr = ""
+    private var selectedTimeStr = ""
+
+    private val dateTimeLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { _ -> }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ActivityAddReminderBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        Log.i(TAG, "=== onCreate START ===")
+        try {
+            super.onCreate(savedInstanceState)
+            binding = ActivityAddReminderBinding.inflate(layoutInflater)
+            setContentView(binding.root)
 
-        setupToolbar()
-        setupDateTimePicker()
-        setupSaveButton()
+            setupToolbar()
+            setupDateButton()
+            setupTimeButton()
+            setupSaveButton()
+
+            updateDateTimeDisplay()
+            Log.i(TAG, "=== onCreate END ===")
+        } catch (e: Throwable) {
+            Log.e(TAG, "FATAL in onCreate", e)
+        }
     }
 
     private fun setupToolbar() {
-        binding.toolbar.setNavigationOnClickListener {
-            finish()
-        }
+        binding.toolbar.setNavigationOnClickListener { finish() }
     }
 
-    private fun setupDateTimePicker() {
-        // 默认显示明天
-        calendar.add(Calendar.DAY_OF_MONTH, 1)
-        calendar.set(Calendar.HOUR_OF_DAY, 9)
-        calendar.set(Calendar.MINUTE, 0)
-        calendar.set(Calendar.SECOND, 0)
-        updateDateTimeDisplay()
-
+    private fun setupDateButton() {
         binding.btnDate.setOnClickListener {
             DatePickerDialog(
                 this,
-                { _, year, month, dayOfMonth ->
-                    calendar.set(Calendar.YEAR, year)
-                    calendar.set(Calendar.MONTH, month)
-                    calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth)
+                { _, year, month, day ->
+                    calendar.set(year, month, day)
+                    selectedDateStr = dateFormat.format(calendar.time)
                     updateDateTimeDisplay()
                 },
                 calendar.get(Calendar.YEAR),
@@ -77,13 +73,17 @@ class AddReminderActivity : AppCompatActivity() {
                 calendar.get(Calendar.DAY_OF_MONTH)
             ).show()
         }
+    }
 
+    private fun setupTimeButton() {
         binding.btnTime.setOnClickListener {
             TimePickerDialog(
                 this,
-                { _, hourOfDay, minute ->
-                    calendar.set(Calendar.HOUR_OF_DAY, hourOfDay)
+                { _, hour, minute ->
+                    calendar.set(Calendar.HOUR_OF_DAY, hour)
                     calendar.set(Calendar.MINUTE, minute)
+                    calendar.set(Calendar.SECOND, 0)
+                    selectedTimeStr = timeFormat.format(calendar.time)
                     updateDateTimeDisplay()
                 },
                 calendar.get(Calendar.HOUR_OF_DAY),
@@ -93,53 +93,41 @@ class AddReminderActivity : AppCompatActivity() {
         }
     }
 
-    private fun updateDateTimeDisplay() {
-        binding.textSelectedDateTime.text = dateTimeFormat.format(calendar.time)
-    }
-
     private fun setupSaveButton() {
         binding.btnSave.setOnClickListener {
-            val title = binding.editTitle.text?.toString()?.trim() ?: ""
-            val content = binding.editContent.text?.toString()?.trim()
+            val title = binding.editTitle.text.toString().trim()
+            val content = binding.editContent.text.toString().trim()
 
-            when {
-                title.isEmpty() -> {
-                    Toast.makeText(this, R.string.title_required, Toast.LENGTH_SHORT).show()
+            if (title.isEmpty()) {
+                Toast.makeText(this, R.string.reminder_title, Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            if (selectedDateStr.isEmpty() || selectedTimeStr.isEmpty()) {
+                Toast.makeText(this, R.string.select_datetime, Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val reminder = Reminder(
+                id = data.getNextId(),
+                title = title,
+                content = content,
+                triggerTime = calendar.timeInMillis
+            )
+
+            lifecycleScope.launch {
+                withContext(Dispatchers.IO) {
+                    data.save(reminder)
                 }
-                calendar.timeInMillis <= System.currentTimeMillis() -> {
-                    Toast.makeText(this, R.string.time_must_be_future, Toast.LENGTH_SHORT).show()
-                }
-                else -> {
-                    checkPermissionsAndSave()
-                }
+                Log.i(TAG, "Saved reminder: $title")
+                finish()
             }
         }
     }
 
-    private fun checkPermissionsAndSave() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            when {
-                ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) == PackageManager.PERMISSION_GRANTED -> {
-                    saveReminder()
-                }
-                else -> {
-                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                }
-            }
-        } else {
-            saveReminder()
-        }
-    }
-
-    private fun saveReminder() {
-        val title = binding.editTitle.text?.toString()?.trim() ?: ""
-        val content = binding.editContent.text?.toString()?.trim()
-
-        viewModel.addReminder(title, content, calendar.timeInMillis)
-        Toast.makeText(this, "提醒已设置", Toast.LENGTH_SHORT).show()
-        finish()
+    private fun updateDateTimeDisplay() {
+        val dateStr = selectedDateStr.ifEmpty { "选择日期" }
+        val timeStr = selectedTimeStr.ifEmpty { "选择时间" }
+        binding.textSelectedDateTime.text = "$dateStr $timeStr"
     }
 }
