@@ -13,9 +13,11 @@ import com.reminder.app.R
 import com.reminder.app.ui.MainActivity
 
 class ReminderReceiver : BroadcastReceiver() {
-    private const val TAG = "ReminderReceiver"
-    private const val CHANNEL_ID = "reminder_channel"
-    private const val CHANNEL_NAME = "提醒通知"
+    companion object {
+        private const val TAG = "ReminderReceiver"
+        private const val CHANNEL_ID = "reminder_channel"
+        private const val CHANNEL_NAME = "提醒通知"
+    }
 
     override fun onReceive(context: Context, intent: Intent) {
         Log.i(TAG, "=== ReminderReceiver onReceive ===")
