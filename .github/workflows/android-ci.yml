@@ -38,11 +38,8 @@ jobs:
         run: |
           echo "sdk.dir=/opt/android-sdk" > local.properties
 
-      - name: Clean Gradle cache
-        run: rm -rf .gradle/caches build app/build
-
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon --stacktrace --refresh-dependencies
+        run: ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
