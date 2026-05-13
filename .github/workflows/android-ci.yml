@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [master]
 
-env:
-  ANDROID_HOME: /opt/android-sdk
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -30,12 +27,16 @@ jobs:
 
       - name: Setup Android SDK
         run: |
-          mkdir -p $ANDROID_HOME/cmdline-tools
+          mkdir -p /opt/android-sdk/cmdline-tools
           curl -sL https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -o /tmp/cmdline-tools.zip
           unzip -q /tmp/cmdline-tools.zip -d /tmp/
-          mv /tmp/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || true
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-34" "build-tools;34.0.0"
+          mv /tmp/cmdline-tools /opt/android-sdk/cmdline-tools/latest
+          yes | /opt/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || true
+          /opt/android-sdk/cmdline-tools/latest/bin/sdkmanager "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Create local.properties
+        run: |
+          echo "sdk.dir=/opt/android-sdk" > local.properties
 
       - name: Build Debug APK
         run: ./gradlew assembleDebug --no-daemon --stacktrace
