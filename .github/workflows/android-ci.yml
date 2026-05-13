@@ -26,13 +26,25 @@ jobs:
           gradle-version: 8.2
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        run: |
+          mkdir -p /opt/android-sdk
+          curl -sL https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -o /tmp/cmdline-tools.zip
+          unzip -q /tmp/cmdline-tools.zip -d /tmp/
+          mkdir -p /opt/android-sdk/cmdline-tools/latest
+          mv /tmp/cmdline-tools/* /opt/android-sdk/cmdline-tools/latest/
+          export ANDROID_HOME=/opt/android-sdk
+          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
+          yes | sdkmanager --licenses 2>/dev/null || true
+          sdkmanager "platforms;android-34" "build-tools;34.0.0" 2>/dev/null
 
       - name: Build Debug APK
         run: ./gradlew assembleDebug --no-daemon
+        env:
+          ANDROID_HOME: /opt/android-sdk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: app-debug
           path: app/build/outputs/apk/debug/app-debug.apk
