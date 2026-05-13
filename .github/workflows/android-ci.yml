@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [master]
 
+env:
+  ANDROID_HOME: /opt/android-sdk
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -27,27 +30,15 @@ jobs:
 
       - name: Setup Android SDK
         run: |
-          mkdir -p /opt/android-sdk
+          mkdir -p $ANDROID_HOME/cmdline-tools
           curl -sL https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -o /tmp/cmdline-tools.zip
           unzip -q /tmp/cmdline-tools.zip -d /tmp/
-          mkdir -p /opt/android-sdk/cmdline-tools/latest
-          mv /tmp/cmdline-tools/* /opt/android-sdk/cmdline-tools/latest/
-          export ANDROID_HOME=/opt/android-sdk
-          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
-          yes | sdkmanager --licenses 2>/dev/null || true
-          sdkmanager "platforms;android-34" "build-tools;34.0.0" 2>/dev/null
+          mv /tmp/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-34" "build-tools;34.0.0"
 
       - name: Build Debug APK
-        run: |
-          export ANDROID_HOME=/opt/android-sdk
-          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 || {
-            echo "=== BUILD FAILED ==="
-            echo "Checking for local.properties..."
-            ls -la local.properties 2>/dev/null || echo "No local.properties"
-            echo "Checking build.gradle..."
-            cat build.gradle 2>/dev/null || echo "No build.gradle"
-            exit 1
-          }
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
