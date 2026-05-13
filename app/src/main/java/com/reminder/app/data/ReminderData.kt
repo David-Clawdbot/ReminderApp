@@ -40,16 +40,30 @@ class ReminderData(private val context: Context) {
         list.removeAll { it.id == reminder.id }
         list.add(reminder)
         saveAll(list)
+        // Schedule the alarm
+        if (reminder.isEnabled && reminder.triggerTime > System.currentTimeMillis()) {
+            ReminderScheduler.schedule(context, reminder)
+        }
     }
 
     fun delete(id: Long) {
+        ReminderScheduler.cancel(context, id)
         val list = getAll().toMutableList()
         list.removeAll { it.id == id }
         saveAll(list)
     }
 
     fun deleteAll() {
+        getAll().forEach { ReminderScheduler.cancel(context, it.id) }
         prefs.edit().putString("reminders", "[]").apply()
+    }
+
+    fun rescheduleAll() {
+        getAll().forEach { reminder ->
+            if (reminder.isEnabled && reminder.triggerTime > System.currentTimeMillis()) {
+                ReminderScheduler.schedule(context, reminder)
+            }
+        }
     }
 
     private fun saveAll(list: List<Reminder>) {
