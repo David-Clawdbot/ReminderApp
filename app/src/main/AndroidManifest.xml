@@ -42,6 +42,16 @@
             android:foregroundServiceType="dataSync"
             android:exported="false" />
 
+        <activity
+            android:name=".ui.ReminderAlarmActivity"
+            android:exported="false"
+            android:launchMode="singleInstance"
+            android:showOnLockScreen="true"
+            android:turnScreenOn="true"
+            android:showWhenLocked="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true" />
+
         <receiver
             android:name=".receiver.ReminderReceiver"
             android:exported="false" />

@@ -25,4 +25,11 @@
 
     <color name="divider_light">#E0E0E0</color>
     <color name="divider_dark">#424242</color>
-</resources>
+
+    <!-- 闹钟全屏弹窗 -->
+    <color name="alarm_background">#1A1A2E</color>
+    <color name="alarm_icon_color">#FF6B6B</color>
+    <color name="alarm_text_color">#FFFFFF</color>
+    <color name="alarm_text_secondary">#B0B0B0</color>
+    <color name="alarm_button_color">#FF6B6B</color>
+</color>
