@@ -37,8 +37,10 @@ class ReminderReceiver : BroadcastReceiver() {
         if (isPreNotify) {
             showPreNotify(context, reminder)
         } else {
-            // 启动全屏闹钟Activity
+            // 启动全屏闹钟Activity（主提醒入口）
             startFullScreenAlarm(context, reminder)
+            // 同时播放铃声和震动作为备份
+            playRingtoneAndVibrate(context)
             // 如果是循环闹钟，重新调度下次
             if (reminder.repeatMode != RepeatMode.ONCE) {
                 val scheduler = AlarmScheduler(context)
@@ -99,6 +101,44 @@ class ReminderReceiver : BroadcastReceiver() {
             }
             val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             nm.createNotificationChannel(channel)
+        }
+    }
+
+    private fun playRingtoneAndVibrate(context: Context) {
+        // 在Receiver里也播放铃声和震动作为备份
+        try {
+            val uri: Uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+            val ringtone = RingtoneManager.getRingtone(context, uri)
+            ringtone.play()
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                ringtone.stop()
+            }, 15000)
+        } catch (e: Exception) {
+            Log.e("ReminderReceiver", "Failed to play ringtone", e)
+        }
+
+        try {
+            val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val vm = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+                vm.defaultVibrator
+            } else {
+                @Suppress("DEPRECATION")
+                context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createWaveform(
+                    longArrayOf(0, 500, 200, 500, 200, 500, 200, 500),
+                    intArrayOf(0, 255, 0, 255, 0, 255, 0, 255),
+                    -1
+                ))
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(longArrayOf(0, 500, 200, 500, 200, 500, 200, 500), -1)
+            }
+        } catch (e: Exception) {
+            Log.e("ReminderReceiver", "Failed to vibrate", e)
         }
     }
 }
