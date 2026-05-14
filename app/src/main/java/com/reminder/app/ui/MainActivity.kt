@@ -1,18 +1,20 @@
 package com.reminder.app.ui
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.reminder.app.R
 import com.reminder.app.data.Reminder
+import com.reminder.app.data.ReminderData
 import com.reminder.app.databinding.ActivityMainBinding
+import com.reminder.app.service.AlarmScheduler
+import com.reminder.app.service.ReminderService
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -20,41 +22,30 @@ class MainActivity : AppCompatActivity() {
     private val TAG = "MainActivity"
 
     private lateinit var binding: ActivityMainBinding
-    private lateinit var viewModel: MainViewModel
+    private lateinit var data: ReminderData
     private lateinit var adapter: ReminderAdapter
-
-    private val addReminderLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { _ ->
-        Log.i(TAG, "=== AddReminder result received ===")
-        viewModel.loadReminders()
-    }
+    private lateinit var scheduler: AlarmScheduler
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        Log.i(TAG, "=== onCreate START ===")
-        try {
-            super.onCreate(savedInstanceState)
-            Log.i(TAG, "=== super.onCreate done ===")
-            binding = ActivityMainBinding.inflate(layoutInflater)
-            Log.i(TAG, "=== binding inflated ===")
-            setContentView(binding.root)
-            Log.i(TAG, "=== setContentView done ===")
-            
-            viewModel = MainViewModel(application)
-            Log.i(TAG, "=== ViewModel created ===")
-            
-            setupToolbar()
-            Log.i(TAG, "=== setupToolbar done ===")
-            setupRecyclerView()
-            Log.i(TAG, "=== setupRecyclerView done ===")
-            setupFab()
-            Log.i(TAG, "=== setupFab done ===")
-            observeReminders()
-            Log.i(TAG, "=== observeReminders done ===")
-            Log.i(TAG, "=== onCreate END ===")
-        } catch (e: Throwable) {
-            Log.e(TAG, "FATAL in onCreate", e)
-        }
+        super.onCreate(savedInstanceState)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        data = ReminderData(this)
+        scheduler = AlarmScheduler(this)
+
+        setupToolbar()
+        setupRecyclerView()
+        setupFab()
+        observeReminders()
+
+        // 启动前台服务
+        startReminderService()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        loadReminders()
     }
 
     private fun setupToolbar() {
@@ -62,6 +53,10 @@ class MainActivity : AppCompatActivity() {
             when (item.itemId) {
                 R.id.action_delete_all -> {
                     showDeleteAllDialog()
+                    true
+                }
+                R.id.action_settings -> {
+                    startActivity(Intent(this, SettingsActivity::class.java))
                     true
                 }
                 else -> false
@@ -72,7 +67,21 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupRecyclerView() {
         adapter = ReminderAdapter(
-            onDeleteClick = { reminder -> showDeleteDialog(reminder) }
+            onToggle = { reminder ->
+                val updated = reminder.copy(isEnabled = !reminder.isEnabled)
+                data.save(updated)
+                scheduler.schedule(updated)
+                loadReminders()
+            },
+            onEdit = { reminder ->
+                val intent = Intent(this, AddReminderActivity::class.java).apply {
+                    putExtra("reminder_id", reminder.id)
+                }
+                startActivity(intent)
+            },
+            onDelete = { reminder ->
+                showDeleteDialog(reminder)
+            }
         )
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
         binding.recyclerView.adapter = adapter
@@ -81,13 +90,13 @@ class MainActivity : AppCompatActivity() {
     private fun setupFab() {
         binding.fabAdd.setOnClickListener {
             val intent = Intent(this, AddReminderActivity::class.java)
-            addReminderLauncher.launch(intent)
+            startActivity(intent)
         }
     }
 
     private fun observeReminders() {
         lifecycleScope.launch {
-            viewModel.reminders.collectLatest { reminders ->
+            data.getAll().let { reminders ->
                 adapter.submitList(reminders)
                 binding.emptyView.visibility = if (reminders.isEmpty()) View.VISIBLE else View.GONE
                 binding.recyclerView.visibility = if (reminders.isEmpty()) View.GONE else View.VISIBLE
@@ -95,12 +104,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun loadReminders() {
+        val reminders = data.getAll()
+        adapter.submitList(reminders)
+        binding.emptyView.visibility = if (reminders.isEmpty()) View.VISIBLE else View.GONE
+        binding.recyclerView.visibility = if (reminders.isEmpty()) View.GONE else View.VISIBLE
+    }
+
     private fun showDeleteDialog(reminder: Reminder) {
         AlertDialog.Builder(this)
-            .setTitle(R.string.confirm_delete)
-            .setMessage(getString(R.string.confirm_delete))
+            .setTitle(R.string.delete)
+            .setMessage(R.string.confirm_delete)
             .setPositiveButton(R.string.yes) { _, _ ->
-                viewModel.deleteReminder(reminder)
+                scheduler.cancel(reminder)
+                data.delete(reminder.id)
+                loadReminders()
             }
             .setNegativeButton(R.string.no, null)
             .show()
@@ -111,9 +129,20 @@ class MainActivity : AppCompatActivity() {
             .setTitle(R.string.delete_all)
             .setMessage(R.string.confirm_delete_all)
             .setPositiveButton(R.string.yes) { _, _ ->
-                viewModel.deleteAllReminders()
+                data.getAll().forEach { scheduler.cancel(it) }
+                data.deleteAll()
+                loadReminders()
             }
             .setNegativeButton(R.string.no, null)
             .show()
+    }
+
+    private fun startReminderService() {
+        val intent = Intent(this, ReminderService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent)
+        } else {
+            startService(intent)
+        }
     }
 }

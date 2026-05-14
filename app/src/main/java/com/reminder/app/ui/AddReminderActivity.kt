@@ -3,14 +3,16 @@ package com.reminder.app.ui
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.os.Bundle
-import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.reminder.app.R
 import com.reminder.app.data.Reminder
 import com.reminder.app.data.ReminderData
+import com.reminder.app.data.RepeatMode
 import com.reminder.app.databinding.ActivityAddReminderBinding
+import com.reminder.app.service.AlarmScheduler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -19,64 +21,49 @@ import java.util.Calendar
 import java.util.Locale
 
 class AddReminderActivity : AppCompatActivity() {
-    private val TAG = "AddReminder"
-
     private lateinit var binding: ActivityAddReminderBinding
     private lateinit var data: ReminderData
+    private lateinit var scheduler: AlarmScheduler
 
     private val calendar = Calendar.getInstance()
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
     private val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+    private val displayFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
 
     private var selectedDateStr = ""
     private var selectedTimeStr = ""
+    private var editReminderId: Long? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        Log.i(TAG, "=== onCreate START ===")
-        try {
-            super.onCreate(savedInstanceState)
-            Log.i(TAG, "super.onCreate done")
+        super.onCreate(savedInstanceState)
+        binding = ActivityAddReminderBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-            data = ReminderData(this)
-            Log.i(TAG, "ReminderData initialized")
+        data = ReminderData(this)
+        scheduler = AlarmScheduler(this)
 
-            binding = ActivityAddReminderBinding.inflate(layoutInflater)
-            Log.i(TAG, "Binding inflated")
+        editReminderId = intent.getLongExtra("reminder_id", -1).takeIf { it != -1L }
 
-            setContentView(binding.root)
-            Log.i(TAG, "setContentView done")
+        setupToolbar()
+        setupDateButton()
+        setupTimeButton()
+        setupRepeatChips()
+        setupPresetButton()
+        setupSaveButton()
 
-            setupToolbar()
-            setupDateButton()
-            setupTimeButton()
-            setupSaveButton()
+        // 如果是编辑模式，加载现有数据
+        editReminderId?.let { loadReminder(it) }
 
-            updateDateTimeDisplay()
-            Log.i(TAG, "=== onCreate END ===")
-        } catch (e: Throwable) {
-            Log.e(TAG, "FATAL in onCreate", e)
-            // Show crash dialog for debugging
-            android.app.AlertDialog.Builder(this)
-                .setTitle("AddReminderActivity Error")
-                .setMessage("Error: " + e.message + "\n" + android.util.Log.getStackTraceString(e))
-                .setPositiveButton("OK") { _, _ -> finish() }
-                .show()
-        }
+        updateDateTimeDisplay()
     }
 
     private fun setupToolbar() {
-        Log.i(TAG, "Setting up toolbar")
-        binding.toolbar.setNavigationOnClickListener {
-            Log.i(TAG, "Toolbar back clicked")
-            finish()
-        }
-        binding.toolbar.title = getString(R.string.add_reminder)
+        binding.toolbar.setNavigationOnClickListener { finish() }
+        binding.toolbar.title = if (editReminderId != null) getString(R.string.edit_reminder) else getString(R.string.add_reminder)
     }
 
     private fun setupDateButton() {
-        Log.i(TAG, "Setting up date button")
         binding.btnDate.setOnClickListener {
-            Log.i(TAG, "Date button clicked")
             DatePickerDialog(
                 this,
                 { _, year, month, day ->
@@ -92,9 +79,7 @@ class AddReminderActivity : AppCompatActivity() {
     }
 
     private fun setupTimeButton() {
-        Log.i(TAG, "Setting up time button")
         binding.btnTime.setOnClickListener {
-            Log.i(TAG, "Time button clicked")
             TimePickerDialog(
                 this,
                 { _, hour, minute ->
@@ -111,43 +96,145 @@ class AddReminderActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupSaveButton() {
-        Log.i(TAG, "Setting up save button")
-        binding.btnSave.setOnClickListener {
-            Log.i(TAG, "Save button clicked")
-            val title = binding.editTitle.text.toString().trim()
-            val content = binding.editContent.text.toString().trim()
-
-            if (title.isEmpty()) {
-                Toast.makeText(this, R.string.reminder_title, Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            if (selectedDateStr.isEmpty() || selectedTimeStr.isEmpty()) {
-                Toast.makeText(this, R.string.select_datetime, Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            val reminder = Reminder(
-                id = data.getNextId(),
-                title = title,
-                content = content,
-                triggerTime = calendar.timeInMillis
-            )
-
-            lifecycleScope.launch {
-                withContext(Dispatchers.IO) {
-                    data.save(reminder)
-                }
-                Log.i(TAG, "Saved reminder: $title")
-                finish()
-            }
+    private fun setupRepeatChips() {
+        binding.chipGroupRepeat.setOnCheckedStateChangeListener { _, checkedIds ->
+            val isWeekly = checkedIds.contains(R.id.chipWeekly)
+            binding.chipGroupWeekdays.visibility = if (isWeekly) View.VISIBLE else View.GONE
         }
     }
 
+    private fun setupPresetButton() {
+        binding.btnPreset.setOnClickListener {
+            binding.editContent.setText(getString(R.string.preset_openclaw))
+        }
+    }
+
+    private fun setupSaveButton() {
+        binding.btnSave.setOnClickListener {
+            saveReminder()
+        }
+    }
+
+    private fun loadReminder(id: Long) {
+        val reminder = data.getAll().find { it.id == id } ?: return
+
+        binding.editTitle.setText(reminder.title)
+        binding.editContent.setText(reminder.content)
+
+        calendar.timeInMillis = reminder.triggerTime
+        selectedDateStr = dateFormat.format(calendar.time)
+        selectedTimeStr = timeFormat.format(calendar.time)
+
+        // 设置重复模式
+        when (reminder.repeatMode) {
+            RepeatMode.ONCE -> binding.chipOnce.isChecked = true
+            RepeatMode.DAILY -> binding.chipDaily.isChecked = true
+            RepeatMode.WEEKDAYS -> binding.chipWeekdays.isChecked = true
+            RepeatMode.WEEKLY -> {
+                binding.chipWeekly.isChecked = true
+                binding.chipGroupWeekdays.visibility = View.VISIBLE
+                // 设置周几
+                val days = reminder.repeatDays
+                binding.chipMon.isChecked = (days and Reminder.MONDAY) != 0
+                binding.chipTue.isChecked = (days and Reminder.TUESDAY) != 0
+                binding.chipWed.isChecked = (days and Reminder.WEDNESDAY) != 0
+                binding.chipThu.isChecked = (days and Reminder.THURSDAY) != 0
+                binding.chipFri.isChecked = (days and Reminder.FRIDAY) != 0
+                binding.chipSat.isChecked = (days and Reminder.SATURDAY) != 0
+                binding.chipSun.isChecked = (days and Reminder.SUNDAY) != 0
+            }
+        }
+
+        // 设置提前提醒
+        when (reminder.preNotifyMinutes) {
+            0 -> binding.chipPreOff.isChecked = true
+            5 -> binding.chipPre5.isChecked = true
+            10 -> binding.chipPre10.isChecked = true
+        }
+
+        updateDateTimeDisplay()
+    }
+
     private fun updateDateTimeDisplay() {
-        val dateStr = selectedDateStr.ifEmpty { "选择日期" }
-        val timeStr = selectedTimeStr.ifEmpty { "选择时间" }
+        val dateStr = selectedDateStr.ifEmpty { "----/--/--" }
+        val timeStr = selectedTimeStr.ifEmpty { "--:--" }
         binding.textSelectedDateTime.text = "$dateStr $timeStr"
+    }
+
+    private fun saveReminder() {
+        val title = binding.editTitle.text.toString().trim()
+        val content = binding.editContent.text.toString().trim()
+
+        if (title.isEmpty()) {
+            Toast.makeText(this, R.string.title_required, Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (selectedDateStr.isEmpty() || selectedTimeStr.isEmpty()) {
+            Toast.makeText(this, R.string.time_required, Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (calendar.timeInMillis <= System.currentTimeMillis() && getSelectedRepeatMode() == RepeatMode.ONCE) {
+            Toast.makeText(this, R.string.time_must_be_future, Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val repeatMode = getSelectedRepeatMode()
+        val repeatDays = if (repeatMode == RepeatMode.WEEKLY) getSelectedWeekdays() else 0
+        val preNotify = getSelectedPreNotify()
+
+        val reminder = Reminder(
+            id = editReminderId ?: data.getNextId(),
+            title = title,
+            content = content,
+            triggerTime = calendar.timeInMillis,
+            repeatMode = repeatMode,
+            repeatDays = repeatDays,
+            preNotifyMinutes = preNotify,
+            isEnabled = true,
+            createdAt = if (editReminderId != null) {
+                data.getAll().find { it.id == editReminderId }?.createdAt ?: System.currentTimeMillis()
+            } else {
+                System.currentTimeMillis()
+            }
+        )
+
+        lifecycleScope.launch {
+            withContext(Dispatchers.IO) {
+                data.save(reminder)
+            }
+            scheduler.schedule(reminder)
+            finish()
+        }
+    }
+
+    private fun getSelectedRepeatMode(): RepeatMode {
+        return when {
+            binding.chipDaily.isChecked -> RepeatMode.DAILY
+            binding.chipWeekdays.isChecked -> RepeatMode.WEEKDAYS
+            binding.chipWeekly.isChecked -> RepeatMode.WEEKLY
+            else -> RepeatMode.ONCE
+        }
+    }
+
+    private fun getSelectedWeekdays(): Int {
+        var days = 0
+        if (binding.chipMon.isChecked) days += Reminder.MONDAY
+        if (binding.chipTue.isChecked) days += Reminder.TUESDAY
+        if (binding.chipWed.isChecked) days += Reminder.WEDNESDAY
+        if (binding.chipThu.isChecked) days += Reminder.THURSDAY
+        if (binding.chipFri.isChecked) days += Reminder.FRIDAY
+        if (binding.chipSat.isChecked) days += Reminder.SATURDAY
+        if (binding.chipSun.isChecked) days += Reminder.SUNDAY
+        return days
+    }
+
+    private fun getSelectedPreNotify(): Int {
+        return when {
+            binding.chipPre5.isChecked -> 5
+            binding.chipPre10.isChecked -> 10
+            else -> 0
+        }
     }
 }

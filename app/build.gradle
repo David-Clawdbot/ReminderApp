@@ -1,37 +1,37 @@
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
+    id 'com.android.application'
+    id 'kotlin-android'
 }
 
 android {
-    namespace = "com.reminder.app"
-    compileSdk = 34
+    namespace 'com.reminder.app'
+    compileSdk 33
 
     defaultConfig {
-        applicationId = "com.reminder.app"
-        minSdk = 26
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        applicationId "com.reminder.app"
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            minifyEnabled false
         }
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = '11'
     }
 
     buildFeatures {
-        viewBinding = true
+        viewBinding true
     }
 }
 

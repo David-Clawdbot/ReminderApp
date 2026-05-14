@@ -4,13 +4,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="4dp"
+    android:layout_marginHorizontal="8dp"
     android:layout_marginVertical="4dp"
-    app:cardElevation="2dp"
     app:cardCornerRadius="12dp"
-    android:foreground="?attr/selectableItemBackground"
-    android:clickable="true"
-    android:focusable="true">
+    app:cardElevation="2dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -19,46 +16,64 @@
         android:padding="16dp"
         android:gravity="center_vertical">
 
+        <!-- 时间大字体 -->
+        <TextView
+            android:id="@+id/textTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorPrimary"
+            tools:text="14:30" />
+
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:layout_marginStart="16dp"
             android:orientation="vertical">
 
+            <!-- 重复模式 -->
             <TextView
-                android:id="@+id/textTitle"
+                android:id="@+id/textRepeat"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="?android:textColorPrimary"
-                android:maxLines="1"
-                android:ellipsize="end"
-                tools:text="开会" />
+                android:textSize="14sp"
+                android:textColor="?android:textColorSecondary"
+                tools:text="周一" />
 
+            <!-- 描述/备注 -->
             <TextView
-                android:id="@+id/textContent"
+                android:id="@+id/textDescription"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:textSize="14sp"
-                android:textColor="?android:textColorSecondary"
-                android:maxLines="2"
-                android:ellipsize="end"
-                android:visibility="gone"
-                tools:text="讨论项目进度" />
-
-            <TextView
-                android:id="@+id/textTriggerTime"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:textSize="12sp"
                 android:textColor="?android:textColorPrimary"
-                tools:text="2024-01-15 14:30" />
+                android:maxLines="1"
+                android:ellipsize="end"
+                tools:text="无备注" />
 
         </LinearLayout>
 
+        <!-- 开关 -->
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchEnabled"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp" />
+
+        <!-- 编辑按钮 -->
+        <ImageButton
+            android:id="@+id/btnEdit"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/edit_reminder"
+            android:src="@android:drawable/ic_menu_edit"
+            app:tint="?android:textColorSecondary" />
+
+        <!-- 删除按钮 -->
         <ImageButton
             android:id="@+id/btnDelete"
             android:layout_width="40dp"
@@ -66,7 +81,7 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/delete"
             android:src="@android:drawable/ic_menu_delete"
-            app:tint="#F44336" />
+            app:tint="?android:textColorSecondary" />
 
     </LinearLayout>
 

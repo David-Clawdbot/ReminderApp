@@ -5,15 +5,6 @@ import android.content.SharedPreferences
 import org.json.JSONArray
 import org.json.JSONObject
 
-data class Reminder(
-    val id: Long,
-    val title: String,
-    val content: String,
-    val triggerTime: Long,
-    val isEnabled: Boolean = true,
-    val createdAt: Long = System.currentTimeMillis()
-)
-
 class ReminderData(private val context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("reminders", Context.MODE_PRIVATE)
 
@@ -23,14 +14,7 @@ class ReminderData(private val context: Context) {
         val array = JSONArray(json)
         for (i in 0 until array.length()) {
             val obj = array.getJSONObject(i)
-            list.add(Reminder(
-                id = obj.getLong("id"),
-                title = obj.getString("title"),
-                content = obj.optString("content", ""),
-                triggerTime = obj.getLong("triggerTime"),
-                isEnabled = obj.optBoolean("isEnabled", true),
-                createdAt = obj.optLong("createdAt", System.currentTimeMillis())
-            ))
+            list.add(fromJson(obj))
         }
         return list.sortedBy { it.triggerTime }
     }
@@ -55,18 +39,42 @@ class ReminderData(private val context: Context) {
     private fun saveAll(list: List<Reminder>) {
         val array = JSONArray()
         for (r in list) {
-            val obj = JSONObject().apply {
-                put("id", r.id)
-                put("title", r.title)
-                put("content", r.content)
-                put("triggerTime", r.triggerTime)
-                put("isEnabled", r.isEnabled)
-                put("createdAt", r.createdAt)
-            }
-            array.put(obj)
+            array.put(toJson(r))
         }
         prefs.edit().putString("reminders", array.toString()).apply()
     }
 
     fun getNextId(): Long = (getAll().maxOfOrNull { it.id } ?: 0) + 1
+
+    private fun toJson(r: Reminder): JSONObject = JSONObject().apply {
+        put("id", r.id)
+        put("title", r.title)
+        put("content", r.content)
+        put("triggerTime", r.triggerTime)
+        put("repeatMode", r.repeatMode.name)
+        put("repeatDays", r.repeatDays)
+        put("preNotifyMinutes", r.preNotifyMinutes)
+        put("isEnabled", r.isEnabled)
+        put("createdAt", r.createdAt)
+    }
+
+    private fun fromJson(obj: JSONObject): Reminder {
+        val repeatModeStr = obj.optString("repeatMode", "ONCE")
+        val repeatMode = try {
+            RepeatMode.valueOf(repeatModeStr)
+        } catch (e: Exception) {
+            RepeatMode.ONCE
+        }
+        return Reminder(
+            id = obj.getLong("id"),
+            title = obj.getString("title"),
+            content = obj.optString("content", ""),
+            triggerTime = obj.getLong("triggerTime"),
+            repeatMode = repeatMode,
+            repeatDays = obj.optInt("repeatDays", 0),
+            preNotifyMinutes = obj.optInt("preNotifyMinutes", 0),
+            isEnabled = obj.optBoolean("isEnabled", true),
+            createdAt = obj.optLong("createdAt", System.currentTimeMillis())
+        )
+    }
 }
