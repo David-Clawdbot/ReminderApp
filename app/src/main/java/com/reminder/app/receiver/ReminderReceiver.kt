@@ -16,6 +16,7 @@ import androidx.core.app.NotificationCompat
 import com.reminder.app.R
 import com.reminder.app.data.Reminder
 import com.reminder.app.data.ReminderData
+import com.reminder.app.data.RepeatMode
 import com.reminder.app.service.AlarmScheduler
 import com.reminder.app.ui.MainActivity
 
@@ -34,7 +35,7 @@ class ReminderReceiver : BroadcastReceiver() {
         } else {
             showReminder(context, reminder)
             // 如果是循环闹钟，重新调度下次
-            if (reminder.repeatMode != com.reminder.app.data.RepeatMode.ONCE) {
+            if (reminder.repeatMode != RepeatMode.ONCE) {
                 val scheduler = AlarmScheduler(context)
                 scheduler.schedule(reminder)
             }
@@ -54,48 +55,57 @@ class ReminderReceiver : BroadcastReceiver() {
     }
 
     private fun showReminder(context: Context, reminder: Reminder) {
-        val notification = createNotification(
-            context,
-            reminder.title,
-            reminder.content.ifEmpty { "时间到！" },
-            reminder.id,
-            isPreNotify = false
-        )
+        // 先响铃再发通知
+        playRingtone(context)
+        vibrate(context)
+
+        val notification = createReminderNotification(context, reminder)
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        nm.notify((reminder.id * 10).toInt(), notification)
+        nm.notify(reminder.id.toInt(), notification)
+    }
 
-        // 响铃
-        try {
-            val uri: Uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-            val ringtone = RingtoneManager.getRingtone(context, uri)
-            ringtone.play()
-            // 10秒后停止
-            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                ringtone.stop()
-            }, 10000)
-        } catch (e: Exception) {
-            // ignore
-        }
+    private fun createReminderNotification(context: Context, reminder: Reminder): android.app.Notification {
+        createNotificationChannel(context)
 
-        // 震动
-        try {
-            val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                val vm = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-                vm.defaultVibrator
-            } else {
-                @Suppress("DEPRECATION")
-                context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 500, 200, 500), -1))
-            } else {
-                @Suppress("DEPRECATION")
-                vibrator.vibrate(longArrayOf(0, 500, 200, 500), -1)
-            }
-        } catch (e: Exception) {
-            // ignore
+        // 点击打开APP
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra("reminder_id", reminder.id)
         }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            reminder.id.toInt(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // 全屏意图（锁屏时弹出）
+        val fullScreenIntent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra("reminder_id", reminder.id)
+        }
+        val fullScreenPendingIntent = PendingIntent.getActivity(
+            context,
+            (reminder.id + 10000).toInt(),
+            fullScreenIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val title = reminder.title
+        val content = reminder.content.ifEmpty { "时间到！" }
+
+        return NotificationCompat.Builder(context, "reminder_channel")
+            .setSmallIcon(android.R.drawable.ic_popup_reminder)
+            .setContentTitle(title)
+            .setContentText(content)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setContentIntent(pendingIntent)
+            .setFullScreenIntent(fullScreenPendingIntent, true)
+            .setAutoCancel(true)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .build()
     }
 
     private fun createNotification(
@@ -117,19 +127,16 @@ class ReminderReceiver : BroadcastReceiver() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val priority = if (isPreNotify) {
-            android.app.NotificationManager.IMPORTANCE_DEFAULT
-        } else {
-            android.app.NotificationManager.IMPORTANCE_HIGH
-        }
-
         return NotificationCompat.Builder(context, "reminder_channel")
             .setSmallIcon(android.R.drawable.ic_popup_reminder)
             .setContentTitle(title)
             .setContentText(content)
-            .setPriority(priority)
+            .setPriority(if (isPreNotify) NotificationCompat.PRIORITY_DEFAULT else NotificationCompat.PRIORITY_MAX)
+            .setCategory(if (isPreNotify) NotificationCompat.CATEGORY_REMINDER else NotificationCompat.CATEGORY_ALARM)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
             .build()
     }
 
@@ -138,13 +145,55 @@ class ReminderReceiver : BroadcastReceiver() {
             val channel = NotificationChannel(
                 "reminder_channel",
                 context.getString(R.string.notification_channel_name),
-                android.app.NotificationManager.IMPORTANCE_HIGH
+                NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = context.getString(R.string.notification_channel_description)
                 enableVibration(true)
+                vibrationPattern = longArrayOf(0, 500, 200, 500, 200, 500)
+                setBypassDnd(true)
+                lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
             }
             val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             nm.createNotificationChannel(channel)
+        }
+    }
+
+    private fun playRingtone(context: Context) {
+        try {
+            val uri: Uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+            val ringtone = RingtoneManager.getRingtone(context, uri)
+            ringtone.play()
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                ringtone.stop()
+            }, 15000)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun vibrate(context: Context) {
+        try {
+            val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val vm = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+                vm.defaultVibrator
+            } else {
+                @Suppress("DEPRECATION")
+                context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createWaveform(
+                    longArrayOf(0, 500, 200, 500, 200, 500, 200, 500),
+                    intArrayOf(0, 255, 0, 255, 0, 255, 0, 255),
+                    -1
+                ))
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(longArrayOf(0, 500, 200, 500, 200, 500, 200, 500), -1)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 }
