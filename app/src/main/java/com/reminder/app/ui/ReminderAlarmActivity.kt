@@ -82,10 +82,10 @@ class ReminderAlarmActivity : Activity() {
 
             mediaPlayer = MediaPlayer().apply {
                 setDataSource(this@ReminderAlarmActivity, uri)
-                audioAttributes = AudioAttributes.Builder()
+                setAudioAttributes(AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_ALARM)
                     .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build()
+                    .build())
                 isLooping = true
                 prepare()
                 start()
