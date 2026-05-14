@@ -56,7 +56,7 @@ class ReminderService : Service() {
             ).apply {
                 description = "保持闹钟正常运行"
                 setShowBadge(false)
-                setTurnScreenOn(true)
+                
             }
             val nm = getSystemService(NotificationManager::class.java)
             nm.createNotificationChannel(channel)
