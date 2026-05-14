@@ -12,11 +12,14 @@ import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.util.Log
 import android.view.WindowManager
 import com.reminder.app.R
 import com.reminder.app.data.ReminderData
 
 class ReminderAlarmActivity : Activity() {
+    private val PREFS_NAME = "settings"
+    private val KEY_RINGTONE = "ringtone"
 
     private var mediaPlayer: MediaPlayer? = null
     private var vibrator: Vibrator? = null
@@ -27,12 +30,9 @@ class ReminderAlarmActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 保持屏幕常亮
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         window.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED)
         window.addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON)
-
-        // 全屏显示
         window.setFlags(
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
@@ -42,14 +42,15 @@ class ReminderAlarmActivity : Activity() {
 
         reminderId = intent.getLongExtra("reminder_id", -1)
         if (reminderId == -1L) {
+            Log.e("ReminderAlarm", "No reminder_id")
             finish()
             return
         }
 
-        // 加载提醒数据
         val data = ReminderData(this)
         val reminder = data.getAll().find { it.id == reminderId }
         if (reminder == null) {
+            Log.e("ReminderAlarm", "Reminder $reminderId not found")
             finish()
             return
         }
@@ -66,7 +67,6 @@ class ReminderAlarmActivity : Activity() {
     private fun setupViews() {
         findViewById<android.widget.TextView>(R.id.textAlarmTitle).text = reminderTitle
         findViewById<android.widget.TextView>(R.id.textAlarmContent).text = reminderContent
-
         findViewById<com.google.android.material.button.MaterialButton>(R.id.btnDismiss).setOnClickListener {
             stopRingtone()
             stopVibration()
@@ -75,62 +75,105 @@ class ReminderAlarmActivity : Activity() {
     }
 
     private fun startRingtone() {
-        try {
-            val uri: Uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+        val ringtoneUri = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getString(KEY_RINGTONE, null)
+
+        val uri: Uri = if (!ringtoneUri.isNullOrEmpty()) {
+            Log.i("ReminderAlarm", "Using user ringtone: $ringtoneUri")
+            Uri.parse(ringtoneUri)
+        } else {
+            Log.i("ReminderAlarm", "Using default alarm")
+            RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
                 ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
                 ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+        }
 
+        try {
             mediaPlayer = MediaPlayer().apply {
                 setDataSource(this@ReminderAlarmActivity, uri)
-                setAudioAttributes(AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build())
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ALARM)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build()
+                )
                 isLooping = true
                 prepare()
                 start()
             }
+            Log.i("ReminderAlarm", "Ringtone started")
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("ReminderAlarm", "Ringtone error", e)
+            // Fallback to default
+            try {
+                val fallback = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                mediaPlayer = MediaPlayer().apply {
+                    setDataSource(this@ReminderAlarmActivity, fallback)
+                    isLooping = true
+                    prepare()
+                    start()
+                }
+            } catch (e2: Exception) {
+                Log.e("ReminderAlarm", "Fallback ringtone error", e2)
+            }
         }
     }
 
     private fun stopRingtone() {
-        mediaPlayer?.apply {
-            if (isPlaying) stop()
-            release()
+        try {
+            mediaPlayer?.apply {
+                if (isPlaying) stop()
+                release()
+            }
+        } catch (e: Exception) {
+            Log.e("ReminderAlarm", "stop ringtone error", e)
         }
         mediaPlayer = null
     }
 
     private fun startVibration() {
-        vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vm = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-            vm.defaultVibrator
-        } else {
-            @Suppress("DEPRECATION")
-            getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        }
+        try {
+            vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val vm = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+                vm.defaultVibrator
+            } else {
+                @Suppress("DEPRECATION")
+                getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            vibrator?.vibrate(VibrationEffect.createWaveform(
-                longArrayOf(0, 1000, 500, 1000, 500, 1000),
-                intArrayOf(0, 255, 0, 255, 0, 255),
-                0
-            ))
-        } else {
-            @Suppress("DEPRECATION")
-            vibrator?.vibrate(longArrayOf(0, 1000, 500, 1000, 500, 1000), 0)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator?.vibrate(
+                    VibrationEffect.createWaveform(
+                        longArrayOf(0, 1000, 500, 1000, 500, 1000),
+                        intArrayOf(0, 255, 0, 255, 0, 255),
+                        0
+                    )
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator?.vibrate(longArrayOf(0, 1000, 500, 1000, 500, 1000), 0)
+            }
+        } catch (e: Exception) {
+            Log.e("ReminderAlarm", "vibration error", e)
         }
     }
 
     private fun stopVibration() {
-        vibrator?.cancel()
+        try {
+            vibrator?.cancel()
+        } catch (e: Exception) {
+            Log.e("ReminderAlarm", "stop vibration error", e)
+        }
     }
 
     private fun cancelNotification() {
-        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        nm.cancel(reminderId.toInt())
+        try {
+            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            nm.cancel(reminderId.toInt())
+            nm.cancel((reminderId * 10 + 1).toInt())
+        } catch (e: Exception) {
+            Log.e("ReminderAlarm", "cancel notification error", e)
+        }
     }
 
     override fun onDestroy() {
@@ -140,6 +183,6 @@ class ReminderAlarmActivity : Activity() {
     }
 
     override fun onBackPressed() {
-        // 禁止按返回键关闭，必须点按钮
+        // 禁止返回键关闭，必须点按钮
     }
 }
