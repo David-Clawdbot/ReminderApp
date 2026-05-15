@@ -30,13 +30,21 @@ class ReminderAlarmActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        window.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED)
-        window.addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON)
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+        // All the flags needed to show on lock screen and turn screen on
+        window.addFlags(
+            WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
+            WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+            WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+            WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD or
+            WindowManager.LayoutParams.FLAG_ALWAYS_FOCUSABLE
         )
+
+        // For Android 8+ (Oreo), use the proper API methods
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true)
+            setTurnScreenOn(true)
+        }
 
         setContentView(R.layout.activity_reminder_alarm)
 
@@ -182,6 +190,7 @@ class ReminderAlarmActivity : Activity() {
         stopVibration()
     }
 
+    @Suppress("DEPRECATION")
     override fun onBackPressed() {
         // 禁止返回键关闭，必须点按钮
     }
