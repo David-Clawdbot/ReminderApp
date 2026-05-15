@@ -45,12 +45,11 @@
         <activity
             android:name=".ui.ReminderAlarmActivity"
             android:exported="false"
-            android:launchMode="singleInstance"
+            android:launchMode="singleTop"
             android:showOnLockScreen="true"
             android:turnScreenOn="true"
             android:showWhenLocked="true"
-            android:excludeFromRecents="true"
-            android:noHistory="true" />
+            android:excludeFromRecents="true" />
 
         <receiver
             android:name=".receiver.ReminderReceiver"
