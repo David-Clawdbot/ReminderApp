@@ -52,3 +52,4 @@ ReminderApp/
 ### 4. 后台保活
 - 使用前台服务(Notification)保持进程
 - 适配国产ROM的特殊要求
+test
