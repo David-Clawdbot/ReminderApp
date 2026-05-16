@@ -36,8 +36,7 @@ class ReminderAlarmActivity : Activity() {
             WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
             WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-            WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD or
-            WindowManager.LayoutParams.FLAG_ALWAYS_FOCUSABLE
+            WindowManager.LayoutParams.FLAG_DISPATCH_KEYGUARD
         )
 
         // For Android 8+ (Oreo), use the proper API methods
