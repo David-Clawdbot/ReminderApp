@@ -105,15 +105,25 @@ class ReminderReceiver : BroadcastReceiver() {
     }
 
     private fun playRingtoneAndVibrate(context: Context) {
-        // 在Receiver里也播放铃声和震动作为备份
-        try {
-            val uri: Uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+        // 读取用户自定义铃声
+        val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        val ringtoneUri = prefs.getString("ringtone", null)
+
+        val uri: Uri = if (!ringtoneUri.isNullOrEmpty()) {
+            Log.i("ReminderReceiver", "Using user ringtone: $ringtoneUri")
+            Uri.parse(ringtoneUri)
+        } else {
+            Log.i("ReminderReceiver", "Using default alarm")
+            RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
                 ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
                 ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+        }
+
+        try {
             val ringtone = RingtoneManager.getRingtone(context, uri)
-            ringtone.play()
+            ringtone?.play()
             android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                ringtone.stop()
+                ringtone?.stop()
             }, 15000)
         } catch (e: Exception) {
             Log.e("ReminderReceiver", "Failed to play ringtone", e)
