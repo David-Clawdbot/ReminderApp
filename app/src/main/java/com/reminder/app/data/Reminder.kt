@@ -52,13 +52,7 @@ data class Reminder(
     }
 
     private fun calculateDailyNext(fromTime: Long): Long {
-        var next = triggerTime
         val oneDayMs = 24 * 60 * 60 * 1000L
-
-        // 如果已过期，计算下一个匹配日期
-        while (next <= fromTime) {
-            next += oneDayMs
-        }
 
         // 提取触发时间的小时和分钟
         val triggerCal = Calendar.getInstance().apply { timeInMillis = triggerTime }
@@ -66,13 +60,23 @@ data class Reminder(
         val triggerMinute = triggerCal.get(Calendar.MINUTE)
         val triggerSecond = triggerCal.get(Calendar.SECOND)
 
-        // 调整到目标日期的相同时间
+        // 从当前时间开始计算下一个触发日期
         val resultCal = Calendar.getInstance().apply {
-            timeInMillis = next
+            timeInMillis = fromTime
             set(Calendar.HOUR_OF_DAY, triggerHour)
             set(Calendar.MINUTE, triggerMinute)
             set(Calendar.SECOND, triggerSecond)
             set(Calendar.MILLISECOND, 0)
+        }
+
+        // 如果时间已过期（或正好是当前时间），加一天
+        if (resultCal.timeInMillis <= fromTime) {
+            resultCal.add(Calendar.DAY_OF_MONTH, 1)
+        }
+
+        // 确保结果是未来时间（可能因为时间精度问题需要多加一天）
+        while (resultCal.timeInMillis <= fromTime) {
+            resultCal.add(Calendar.DAY_OF_MONTH, 1)
         }
 
         return resultCal.timeInMillis
@@ -93,7 +97,7 @@ data class Reminder(
         val triggerMinute = triggerCal.get(Calendar.MINUTE)
         val triggerSecond = triggerCal.get(Calendar.SECOND)
 
-        // 找到下一个工作日（周一到周五）
+        // 用 next 初始化结果日历
         val resultCal = Calendar.getInstance().apply {
             timeInMillis = next
             set(Calendar.HOUR_OF_DAY, triggerHour)
@@ -102,27 +106,26 @@ data class Reminder(
             set(Calendar.MILLISECOND, 0)
         }
 
-        // 检查并跳过周末
-        var maxIterations = 7 // 最多循环7次找到工作日
-        while (maxIterations > 0) {
+        // 跳过周末，找到工作日（周一到周五）
+        var iterations = 7
+        while (iterations > 0) {
             val dayOfWeek = resultCal.get(Calendar.DAY_OF_WEEK)
             // Calendar.MONDAY = 2, FRIDAY = 6
             if (dayOfWeek >= Calendar.MONDAY && dayOfWeek <= Calendar.FRIDAY) {
-                break // 找到工作日
+                // 找到工作日，确保时间在 fromTime 之后
+                if (resultCal.timeInMillis > fromTime) {
+                    return resultCal.timeInMillis
+                }
+                // 时间已过期，跳过
             }
-            // 不是工作日，往后加一天
+            // 不是工作日（或时间已过），往后加一天
             resultCal.add(Calendar.DAY_OF_MONTH, 1)
-            maxIterations--
+            iterations--
         }
 
-        // 如果结果仍在 fromTime 之前，往后加一周重新计算
-        if (resultCal.timeInMillis <= fromTime) {
-            resultCal.timeInMillis = fromTime
-            resultCal.add(Calendar.DAY_OF_MONTH, 1)
-            return calculateWeekdaysNext(resultCal.timeInMillis)
-        }
-
-        return resultCal.timeInMillis
+        // 如果7天内没找到工作日，往后加7天重新计算
+        resultCal.add(Calendar.DAY_OF_MONTH, 7)
+        return calculateWeekdaysNext(resultCal.timeInMillis)
     }
 
     private fun calculateWeeklyNext(fromTime: Long): Long {
