@@ -87,16 +87,33 @@ class AlarmScheduler(private val context: Context) {
         }
 
         val requestCode = getRequestCode(reminder.id, isPreNotify)
+
+        // 先取消旧的 PendingIntent，确保没有冲突
+        val oldPendingIntent = PendingIntent.getBroadcast(
+            context,
+            requestCode,
+            intent,
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+        )
+        oldPendingIntent?.let {
+            alarmManager.cancel(it)
+            it.cancel()
+            Log.i("AlarmScheduler", "Cancelled old PendingIntent for reminder ${reminder.id}")
+        }
+
+        // 使用 FLAG_CANCEL_CURRENT 确保拿到新的 PendingIntent
         val pendingIntent = PendingIntent.getBroadcast(
             context,
             requestCode,
             intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         // 目标时间和当前时间的差值（毫秒）
         val now = System.currentTimeMillis()
         val diff = time - now
+
+        Log.i("AlarmScheduler", "Scheduling alarm: id=${reminder.id}, time=$time, now=$now, diff=${diff}ms")
 
         // 如果时间已经非常接近（小于2秒），调整到2秒后避免立即触发
         val safeTime = if (diff < 2000) {
@@ -159,20 +176,25 @@ class AlarmScheduler(private val context: Context) {
 
     private fun cancelIntent(requestCode: Int) {
         val intent = Intent(context, ReminderReceiver::class.java)
+        // 使用 FLAG_NO_CREATE 只检查是否存在，不创建新的
+        // 但要真正取消，需要用匹配的方式创建 PendingIntent
         val pendingIntent = PendingIntent.getBroadcast(
             context,
             requestCode,
             intent,
             PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
         )
-        pendingIntent?.let {
+        if (pendingIntent != null) {
+            Log.i("AlarmScheduler", "Found existing PendingIntent, cancelling requestCode $requestCode")
             try {
-                alarmManager.cancel(it)
-                it.cancel()
+                alarmManager.cancel(pendingIntent)
+                pendingIntent.cancel()
                 Log.i("AlarmScheduler", "Cancelled pending intent with requestCode $requestCode")
             } catch (e: Exception) {
                 Log.e("AlarmScheduler", "Failed to cancel intent $requestCode", e)
             }
+        } else {
+            Log.i("AlarmScheduler", "No existing PendingIntent found for requestCode $requestCode")
         }
     }
 
