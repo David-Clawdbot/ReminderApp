@@ -27,6 +27,9 @@ class AlarmScheduler(private val context: Context) {
             return
         }
 
+        // 取消旧的闹钟（确保不会重复触发或使用旧时间）
+        cancel(reminder)
+
         val nextTime = reminder.getNextTriggerTime() ?: return
         val now = System.currentTimeMillis()
 
