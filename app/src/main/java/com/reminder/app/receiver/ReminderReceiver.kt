@@ -54,7 +54,50 @@ class ReminderReceiver : BroadcastReceiver() {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra("reminder_id", reminder.id)
         }
-        context.startActivity(intent)
+        
+        // 使用 fullScreenIntent 确保在锁屏时也能弹出
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
+        }
+        
+        try {
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            Log.e("ReminderReceiver", "Failed to start fullscreen alarm", e)
+            // 回退到显示通知
+            showFallbackNotification(context, reminder)
+        }
+    }
+
+    private fun showFallbackNotification(context: Context, reminder: Reminder) {
+        createNotificationChannel(context)
+        
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra("reminder_id", reminder.id)
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            (reminder.id * 10).toInt(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(context, "reminder_channel")
+            .setSmallIcon(android.R.drawable.ic_popup_reminder)
+            .setContentTitle("⏰ ${reminder.title}")
+            .setContentText(reminder.content)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .setFullScreenIntent(pendingIntent, true) // 锁屏弹窗
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .build()
+
+        val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        nm.notify((reminder.id * 10).toInt(), notification)
     }
 
     private fun showPreNotify(context: Context, reminder: Reminder) {
