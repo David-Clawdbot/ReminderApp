@@ -32,10 +32,17 @@ class AlarmScheduler(private val context: Context) {
 
         Log.i("AlarmScheduler", "Scheduling reminder ${reminder.id}: nextTime=$nextTime, now=$now, diff=${nextTime - now}ms")
 
-        // 确保时间在现在之后
+        // 确保时间在现在之后（允许1秒的最小提前量避免立即触发）
         if (nextTime <= now + MIN_ADVANCE_MS) {
-            Log.w("AlarmScheduler", "Next trigger time is too close (< ${MIN_ADVANCE_MS}ms), adjusting to now + MIN_ADVANCE_MS")
-            // 对于这种情况，应该重新计算下次触发时间
+            Log.w("AlarmScheduler", "Next trigger time is in the past or too close ($nextTime vs $now), rescheduling")
+            // 重新计算下一次触发时间
+            val nextNextTime = reminder.getNextTriggerTime(System.currentTimeMillis() + 2000)
+            if (nextNextTime == null) {
+                Log.w("AlarmScheduler", "No valid next trigger time, skipping")
+                return
+            }
+            // 用新的时间继续调度
+            scheduleWithTime(reminder, nextNextTime)
             return
         }
 
@@ -46,6 +53,22 @@ class AlarmScheduler(private val context: Context) {
                 scheduleAlarm(reminder, preTime, isPreNotify = true)
             } else {
                 Log.i("AlarmScheduler", "Pre-notify time $preTime is in the past, skipping")
+            }
+        }
+
+        // 主提醒
+        scheduleAlarm(reminder, nextTime, isPreNotify = false)
+    }
+
+    private fun scheduleWithTime(reminder: Reminder, nextTime: Long) {
+        val now = System.currentTimeMillis()
+        Log.i("AlarmScheduler", "Rescheduling with new time: $nextTime, now=$now")
+
+        // 预备提醒
+        if (reminder.preNotifyMinutes > 0) {
+            val preTime = nextTime - reminder.preNotifyMinutes * 60 * 1000L
+            if (preTime > now + MIN_ADVANCE_MS) {
+                scheduleAlarm(reminder, preTime, isPreNotify = true)
             }
         }
 
@@ -68,50 +91,50 @@ class AlarmScheduler(private val context: Context) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        // 目标时间和当前时间的差值（毫秒）
+        val now = System.currentTimeMillis()
+        val diff = time - now
+
+        // 如果时间已经非常接近（小于2秒），调整到2秒后避免立即触发
+        val safeTime = if (diff < 2000) {
+            Log.w("AlarmScheduler", "Target time too close (${diff}ms), adjusting to +2s")
+            now + 2000
+        } else {
+            time
+        }
+
         try {
-            // 优先使用 SCHEDULE_EXACT_ALARM
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                if (alarmManager.canScheduleExactAlarms()) {
-                    alarmManager.setExactAndAllowWhileIdle(
-                        AlarmManager.RTC_WAKEUP,
-                        time,
-                        pendingIntent
-                    )
-                    Log.i("AlarmScheduler", "Using setExactAndAllowWhileIdle for ${reminder.id} at $time")
-                } else {
-                    // 回退到非精确闹钟
-                    alarmManager.setAndAllowWhileIdle(
-                        AlarmManager.RTC_WAKEUP,
-                        time,
-                        pendingIntent
-                    )
-                    Log.i("AlarmScheduler", "Using setAndAllowWhileIdle (no exact alarm permission) for ${reminder.id} at $time")
-                }
-            } else {
-                alarmManager.setExactAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    time,
-                    pendingIntent
-                )
-                Log.i("AlarmScheduler", "Using setExactAndAllowWhileIdle for ${reminder.id} at $time")
-            }
-        } catch (e: SecurityException) {
-            // 权限被拒绝，回退到非精确闹钟
-            Log.w("AlarmScheduler", "Exact alarm permission denied, falling back", e)
-            alarmManager.setAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                time,
+            // 使用 setAlarmClock 以获得最高优先级（不受Doze限制）
+            val alarmClockInfo = AlarmManager.AlarmClockInfo(
+                safeTime,
                 pendingIntent
             )
+            alarmManager.setAlarmClock(alarmClockInfo, pendingIntent)
+            Log.i("AlarmScheduler", "Using setAlarmClock (highest priority) for ${reminder.id} at $safeTime")
         } catch (e: Exception) {
-            Log.e("AlarmScheduler", "Failed to schedule alarm", e)
-            // 最后的回退方案
+            Log.e("AlarmScheduler", "setAlarmClock failed, falling back to setExactAndAllowWhileIdle", e)
             try {
-                alarmManager.setAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    time,
-                    pendingIntent
-                )
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    if (alarmManager.canScheduleExactAlarms()) {
+                        alarmManager.setExactAndAllowWhileIdle(
+                            AlarmManager.RTC_WAKEUP,
+                            safeTime,
+                            pendingIntent
+                        )
+                    } else {
+                        alarmManager.setAndAllowWhileIdle(
+                            AlarmManager.RTC_WAKEUP,
+                            safeTime,
+                            pendingIntent
+                        )
+                    }
+                } else {
+                    alarmManager.setExactAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        safeTime,
+                        pendingIntent
+                    )
+                }
             } catch (e2: Exception) {
                 Log.e("AlarmScheduler", "Fallback also failed", e2)
             }
