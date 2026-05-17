@@ -1,9 +1,9 @@
 -- Merging decision tree log ---
 manifest
-ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:2:1-69:12
-INJECTED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:2:1-69:12
-INJECTED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:2:1-69:12
-INJECTED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:2:1-69:12
+ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:2:1-81:12
+INJECTED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:2:1-81:12
+INJECTED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:2:1-81:12
+INJECTED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:2:1-81:12
 MERGED from [androidx.databinding:viewbinding:8.2.0] /home/david/.gradle/caches/transforms-3/7bf00ef9907e6dc04d153202ad173062/transformed/jetified-viewbinding-8.2.0/AndroidManifest.xml:2:1-7:12
 MERGED from [com.google.android.material:material:1.9.0] /home/david/.gradle/caches/transforms-3/603fee44efded95d660e51c4afd8c29a/transformed/material-1.9.0/AndroidManifest.xml:17:1-26:12
 MERGED from [androidx.constraintlayout:constraintlayout:2.1.4] /home/david/.gradle/caches/transforms-3/b59af9710dbfbd4fe36f26eb6ba98ac5/transformed/constraintlayout-2.1.4/AndroidManifest.xml:2:1-11:12
@@ -85,8 +85,8 @@ ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManif
 	android:name
 		ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:10:22-78
 application
-ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:12:5-67:19
-INJECTED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:12:5-67:19
+ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:12:5-79:19
+INJECTED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:12:5-79:19
 MERGED from [com.google.android.material:material:1.9.0] /home/david/.gradle/caches/transforms-3/603fee44efded95d660e51c4afd8c29a/transformed/material-1.9.0/AndroidManifest.xml:24:5-20
 MERGED from [com.google.android.material:material:1.9.0] /home/david/.gradle/caches/transforms-3/603fee44efded95d660e51c4afd8c29a/transformed/material-1.9.0/AndroidManifest.xml:24:5-20
 MERGED from [androidx.constraintlayout:constraintlayout:2.1.4] /home/david/.gradle/caches/transforms-3/b59af9710dbfbd4fe36f26eb6ba98ac5/transformed/constraintlayout-2.1.4/AndroidManifest.xml:9:5-20
@@ -162,7 +162,7 @@ ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManif
 	android:name
 		ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:41:13-52
 activity#com.reminder.app.ui.ReminderAlarmActivity
-ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:45:9-53:40
+ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:45:9-52:49
 	android:turnScreenOn
 		ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:50:13-40
 	android:excludeFromRecents
@@ -170,9 +170,7 @@ ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManif
 	android:showWhenLocked
 		ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:51:13-42
 	android:launchMode
-		ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:48:13-48
-	android:noHistory
-		ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:53:13-37
+		ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:48:13-43
 	android:exported
 		ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:47:13-37
 	android:showOnLockScreen
@@ -180,23 +178,43 @@ ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManif
 	android:name
 		ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:46:13-53
 receiver#com.reminder.app.receiver.ReminderReceiver
-ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:55:9-57:40
+ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:54:9-56:40
 	android:exported
-		ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:57:13-37
+		ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:56:13-37
 	android:name
-		ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:56:13-54
+		ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:55:13-54
 receiver#com.reminder.app.receiver.BootReceiver
-ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:59:9-65:20
+ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:58:9-67:20
 	android:exported
-		ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:61:13-37
+		ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:60:13-37
 	android:name
-		ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:60:13-50
-intent-filter#action:name:android.intent.action.BOOT_COMPLETED
-ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:62:13-64:29
+		ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:59:13-50
+intent-filter#action:name:android.intent.action.BOOT_COMPLETED+action:name:android.intent.action.LOCALE_CHANGED+action:name:android.intent.action.TIMEZONE_CHANGED+action:name:android.intent.action.TIME_CHANGED
+ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:61:13-66:29
 action#android.intent.action.BOOT_COMPLETED
-ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:63:17-79
+ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:62:17-79
 	android:name
-		ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:63:25-76
+		ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:62:25-76
+action#android.intent.action.TIME_CHANGED
+ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:63:17-77
+	android:name
+		ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:63:25-74
+action#android.intent.action.TIMEZONE_CHANGED
+ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:64:17-81
+	android:name
+		ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:64:25-78
+action#android.intent.action.LOCALE_CHANGED
+ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:65:17-79
+	android:name
+		ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:65:25-76
+receiver#com.reminder.app.receiver.TimeChangeReceiver
+ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:69:9-77:20
+	android:exported
+		ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:71:13-37
+	android:name
+		ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:70:13-56
+intent-filter#action:name:android.intent.action.LOCALE_CHANGED+action:name:android.intent.action.TIMEZONE_CHANGED+action:name:android.intent.action.TIME_CHANGED
+ADDED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml:72:13-76:29
 uses-sdk
 INJECTED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from /home/david/.openclaw/workspace/ReminderApp/app/src/main/AndroidManifest.xml

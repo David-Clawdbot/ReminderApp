@@ -8,9 +8,19 @@ import com.reminder.app.service.AlarmScheduler
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
-            Log.i("BootReceiver", "Boot completed, rescheduling alarms")
-            AlarmScheduler(context).rescheduleAll()
+        when (intent.action) {
+            Intent.ACTION_BOOT_COMPLETED -> {
+                Log.i("BootReceiver", "Boot completed, rescheduling alarms")
+                AlarmScheduler(context).rescheduleAll()
+            }
+            Intent.ACTION_TIME_CHANGED, Intent.ACTION_TIMEZONE_CHANGED -> {
+                Log.i("BootReceiver", "Time changed, rescheduling alarms")
+                AlarmScheduler(context).rescheduleAll()
+            }
+            Intent.ACTION_LOCALE_CHANGED -> {
+                Log.i("BootReceiver", "Locale changed, rescheduling alarms")
+                AlarmScheduler(context).rescheduleAll()
+            }
         }
     }
 }
