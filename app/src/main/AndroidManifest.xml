@@ -8,6 +8,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.ANSWER_INCOMING_CALLS" />
 
     <application
         android:allowBackup="true"
@@ -46,11 +48,13 @@
             android:name=".ui.ReminderAlarmActivity"
             android:exported="false"
             android:launchMode="singleTop"
+            android:theme="@style/Theme.ReminderApp.Fullscreen"
             android:showOnLockScreen="true"
             android:turnScreenOn="true"
             android:showWhenLocked="true"
             android:excludeFromRecents="true"
-            android:configChanges="orientation|screenSize|keyboardHidden" />
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:resizeableActivity="false" />
 
         <receiver
             android:name=".receiver.ReminderReceiver"

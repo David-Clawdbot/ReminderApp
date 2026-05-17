@@ -13,4 +13,12 @@
         <item name="android:textColorSecondary">@color/text_secondary_light</item>
     </style>
 
+    <style name="Theme.ReminderApp.Fullscreen" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="windowNoTitle">true</item>
+        <item name="windowActionBar">false</item>
+        <item name="android:windowBackground">@android:color/black</item>
+    </style>
+
 </resources>
